@@ -16,3 +16,5 @@ vendor/
 # IntelliJ IDEA
 .idea/
 
+# Config file
+config.toml
