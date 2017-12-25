@@ -67,7 +67,7 @@ func main() {
 		for _, tweet := range timeline {
 			tweetTime, _ := tweet.CreatedAtTime()
 			if oldestTimestamp != 0 && tweetTime.Unix() < oldestTimestamp {
-				if tweet.FavoriteCount >= viper.GetInt("FAVS") || tweet.RetweetCount >= viper.GetInt("RT") {
+				if (tweet.FavoriteCount >= viper.GetInt("FAVS") || tweet.RetweetCount >= viper.GetInt("RT")) && !tweet.Retweeted {
 					log.Printf("Skipping tweet because it's popular (%v): %v", tweet.Id, tweet.FullText)
 					skippedTweets += 1
 					continue
