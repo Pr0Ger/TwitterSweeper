@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"time"
+
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/spf13/viper"
 )
@@ -12,6 +14,8 @@ import (
 const MAX_TWEETS_PER_PAGE = 200
 
 func main() {
+	viper.SetDefault("OLDS", 100)
+
 	viper.AutomaticEnv()
 	viper.SetConfigFile("config.toml")
 	viper.AddConfigPath(".")
@@ -30,8 +34,20 @@ func main() {
 
 	v := url.Values{}
 	v.Set("count", string(MAX_TWEETS_PER_PAGE))
+	v.Set("max_id", "7126309800")
 
-	var allTweets []anaconda.Tweet
+	var tweetsForRemoving []anaconda.Tweet
+	var totalTweets int
+
+	oldestTimestamp := viper.GetInt64("OLDEST_TIMESTAMP")
+	olds := time.Duration(viper.GetInt64("OLDS"))
+
+	now := time.Now()
+	oldestByDays := now.Add(-olds * time.Hour * 24)
+
+	if oldestTimestamp < oldestByDays.Unix() && olds != 0 {
+		oldestTimestamp = oldestByDays.Unix()
+	}
 
 	for {
 		timeline, err := api.GetUserTimeline(v)
@@ -41,10 +57,25 @@ func main() {
 		if len(timeline) == 0 {
 			break
 		}
+		totalTweets += len(timeline)
 
-		allTweets = append(allTweets, timeline...)
 		v.Set("max_id", strconv.FormatInt(timeline[len(timeline)-1].Id-1, 10))
 
-		log.Printf("Downloaded %v/%v tweets", len(allTweets), user.StatusesCount)
+		log.Printf("Downloaded %v/%v tweets", totalTweets, user.StatusesCount)
+
+		for _, tweet := range timeline {
+			tweetTime, _ := tweet.CreatedAtTime()
+			if oldestTimestamp != 0 && tweetTime.Unix() < oldestTimestamp {
+				tweetsForRemoving = append(tweetsForRemoving, tweet)
+			}
+		}
+	}
+
+	for _, tweet := range tweetsForRemoving {
+		log.Printf("Removing tweet (%v): %v", tweet.Id, tweet.FullText)
+		_, err := api.DeleteTweet(tweet.Id, true)
+		if err != nil {
+			log.Printf("\tUnable to delete tweet: %v", err)
+		}
 	}
 }
