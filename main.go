@@ -38,7 +38,7 @@ func main() {
 	v.Set("count", string(MAX_TWEETS_PER_PAGE))
 
 	var tweetsForRemoving []anaconda.Tweet
-	var totalTweets int
+	var totalTweets, skippedTweets int
 
 	oldestTimestamp := viper.GetInt64("OLDEST_TIMESTAMP")
 	olds := time.Duration(viper.GetInt64("OLDS"))
@@ -69,6 +69,7 @@ func main() {
 			if oldestTimestamp != 0 && tweetTime.Unix() < oldestTimestamp {
 				if tweet.FavoriteCount >= viper.GetInt("FAVS") || tweet.RetweetCount >= viper.GetInt("RT") {
 					log.Printf("Skipping tweet because it's popular (%v): %v", tweet.Id, tweet.FullText)
+					skippedTweets += 1
 					continue
 				}
 				tweetsForRemoving = append(tweetsForRemoving, tweet)
@@ -83,4 +84,6 @@ func main() {
 			log.Printf("\tUnable to delete tweet: %v", err)
 		}
 	}
+
+	log.Printf("Total tweets deleted: %v; skipped: %v", len(tweetsForRemoving), skippedTweets)
 }
