@@ -15,6 +15,8 @@ const MAX_TWEETS_PER_PAGE = 200
 
 func main() {
 	viper.SetDefault("OLDS", 100)
+	viper.SetDefault("FAVS", 5)
+	viper.SetDefault("RT", 5)
 
 	viper.AutomaticEnv()
 	viper.SetConfigFile("config.toml")
@@ -34,7 +36,6 @@ func main() {
 
 	v := url.Values{}
 	v.Set("count", string(MAX_TWEETS_PER_PAGE))
-	v.Set("max_id", "7126309800")
 
 	var tweetsForRemoving []anaconda.Tweet
 	var totalTweets int
@@ -66,6 +67,10 @@ func main() {
 		for _, tweet := range timeline {
 			tweetTime, _ := tweet.CreatedAtTime()
 			if oldestTimestamp != 0 && tweetTime.Unix() < oldestTimestamp {
+				if tweet.FavoriteCount >= viper.GetInt("FAVS") || tweet.RetweetCount >= viper.GetInt("RT") {
+					log.Printf("Skipping tweet because it's popular (%v): %v", tweet.Id, tweet.FullText)
+					continue
+				}
 				tweetsForRemoving = append(tweetsForRemoving, tweet)
 			}
 		}
