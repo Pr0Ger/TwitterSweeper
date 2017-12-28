@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/url"
 	"strconv"
-
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
@@ -14,7 +13,7 @@ import (
 const MAX_TWEETS_PER_PAGE = 200
 
 func main() {
-	viper.SetDefault("OLDS", 100)
+	viper.SetDefault("OLDS", 365)
 	viper.SetDefault("FAVS", 5)
 	viper.SetDefault("RT", 5)
 
@@ -38,6 +37,7 @@ func main() {
 	v.Set("count", string(MAX_TWEETS_PER_PAGE))
 
 	var tweetsForRemoving []anaconda.Tweet
+	var skipRemovingBecauseWeRepliedToIt []int64
 	var totalTweets, skippedTweets int
 
 	oldestTimestamp := viper.GetInt64("OLDEST_TIMESTAMP")
@@ -67,12 +67,22 @@ func main() {
 		for _, tweet := range timeline {
 			tweetTime, _ := tweet.CreatedAtTime()
 			if oldestTimestamp != 0 && tweetTime.Unix() < oldestTimestamp {
+				for _, id := range skipRemovingBecauseWeRepliedToIt {
+					if tweet.Id == id {
+						log.Printf("Skipping tweet because we replied to it (%v): %v", tweet.Id, tweet.FullText)
+						continue
+					}
+				}
 				if (tweet.FavoriteCount >= viper.GetInt("FAVS") || tweet.RetweetCount >= viper.GetInt("RT")) && !tweet.Retweeted {
 					log.Printf("Skipping tweet because it's popular (%v): %v", tweet.Id, tweet.FullText)
 					skippedTweets += 1
 					continue
 				}
 				tweetsForRemoving = append(tweetsForRemoving, tweet)
+			} else {
+				if tweet.InReplyToUserID == user.Id {
+					skipRemovingBecauseWeRepliedToIt = append(skipRemovingBecauseWeRepliedToIt, tweet.InReplyToStatusID)
+				}
 			}
 		}
 	}
