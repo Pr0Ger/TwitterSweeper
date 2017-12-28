@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"regexp"
+
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/spf13/viper"
 )
@@ -87,7 +89,13 @@ func main() {
 		}
 	}
 
+	keybase := regexp.MustCompile("^Verifying myself: I am .* on Keybase\\.io\\.")
 	for _, tweet := range tweetsForRemoving {
+		if keybase.MatchString(tweet.FullText) {
+			log.Print("Skip Keybase.io verification tweet")
+			continue
+		}
+
 		log.Printf("Removing tweet (%v): %v", tweet.Id, tweet.FullText)
 		_, err := api.DeleteTweet(tweet.Id, true)
 		if err != nil {
