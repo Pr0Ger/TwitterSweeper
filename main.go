@@ -22,7 +22,7 @@ func main() {
 	viper.AutomaticEnv()
 	viper.SetConfigFile("config.toml")
 	viper.AddConfigPath(".")
-	viper.ReadInConfig()
+	_ = viper.ReadInConfig()
 
 	anaconda.SetConsumerKey(viper.GetString("TWITTER_CONSUMER_KEY"))
 	anaconda.SetConsumerSecret(viper.GetString("TWITTER_CONSUMER_SECRET"))
@@ -77,7 +77,7 @@ func main() {
 				}
 				if (tweet.FavoriteCount >= viper.GetInt("FAVS") || tweet.RetweetCount >= viper.GetInt("RT")) && !tweet.Retweeted {
 					log.Printf("Skipping tweet because it's popular (%v): %v", tweet.Id, tweet.FullText)
-					skippedTweets += 1
+					skippedTweets++
 					continue
 				}
 				tweetsForRemoving = append(tweetsForRemoving, tweet)
@@ -89,7 +89,7 @@ func main() {
 		}
 	}
 
-	keybase := regexp.MustCompile("^Verifying myself: I am .* on Keybase\\.io\\.")
+	keybase := regexp.MustCompile(`^Verifying myself: I am .* on Keybase\.io\.`)
 	for _, tweet := range tweetsForRemoving {
 		if keybase.MatchString(tweet.FullText) {
 			log.Print("Skip Keybase.io verification tweet")
