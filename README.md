@@ -10,10 +10,8 @@ TwitterSweeper is a small application to delete your old, unpopular tweets.
 ## Usage
 To install from sources:
 ```bash
-brew install dep ## for macOS users; in other cases follow instructions here https://github.com/golang/dep
-go get -d github.com/Pr0Ger/TwitterSweeper
-cd $(go env GOPATH)/src/github.com/Pr0Ger/TwitterSweeper
-dep ensure
+git clone git@github.com:Pr0Ger/TwitterSweeper.git
+cd TwitterSweeper
 go build 
 ```
 
@@ -27,7 +25,7 @@ TWITTER_ACCESS_TOKEN_SECRET=...
 
 Then just run TwitterSweeper
 ```bash
-$(go env GOPATH)/bin/TwitterSweeper
+./TwitterSweeper
 ```
 
 ## Contact
